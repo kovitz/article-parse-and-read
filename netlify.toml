@@ -1,0 +1,18 @@
+[build]
+  command = "npm install"
+  publish = "public"
+  functions = "netlify/functions"
+
+# API routes - redirect to Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Handle client-side routing - redirect all non-file requests to index.html
+# This excludes /api/* routes and static files (handled automatically)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

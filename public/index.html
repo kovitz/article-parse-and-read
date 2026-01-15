@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Reader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .input-section {
+            padding: 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #urlInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        #urlInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #parseButton {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #parseButton:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #parseButton:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #parseButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fee;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .content-section {
+            padding: 30px;
+            min-height: 200px;
+        }
+
+        .article-container {
+            display: none;
+        }
+
+        .article-container.show {
+            display: block;
+        }
+
+        .article-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .article-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .article-content p {
+            margin-bottom: 1.2em;
+        }
+
+        .article-content h1,
+        .article-content h2,
+        .article-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            color: #333;
+        }
+
+        /* Embed styles */
+        .article-content .embed-wrapper {
+            margin: 2em 0;
+            clear: both;
+        }
+
+        .article-content .embed-youtube {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            border-radius: 8px;
+        }
+
+        .article-content .embed-youtube iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .article-content .embed-twitter {
+            margin: 2em auto;
+            max-width: 100%;
+        }
+
+        .article-content .embed-twitter blockquote {
+            margin: 0 auto;
+            max-width: 550px;
+        }
+
+        .article-content .embed-twitter iframe {
+            max-width: 100%;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .container {
+            background: #2d2d2d;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .input-section {
+            border-bottom: 1px solid #404040;
+            background: #2d2d2d;
+        }
+
+        body.dark-mode #urlInput {
+            background: #1a1a1a;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode #urlInput:focus {
+            border-color: #667eea;
+            background: #252525;
+        }
+
+        body.dark-mode #urlInput::placeholder {
+            color: #888;
+        }
+
+        body.dark-mode .content-section {
+            background: #2d2d2d;
+        }
+
+        body.dark-mode .article-title {
+            color: #f0f0f0;
+        }
+
+        body.dark-mode .article-meta {
+            color: #b0b0b0;
+            border-bottom: 1px solid #404040;
+        }
+
+        body.dark-mode .article-content {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .article-content h1,
+        body.dark-mode .article-content h2,
+        body.dark-mode .article-content h3 {
+            color: #f0f0f0;
+        }
+
+        body.dark-mode .empty-state {
+            color: #888;
+        }
+
+        body.dark-mode .error-message {
+            background: #4a2525;
+            color: #ff6b6b;
+            border: 1px solid #5a3535;
+        }
+
+        body.dark-mode .loading {
+            color: #667eea;
+        }
+
+        body.dark-mode .spinner {
+            border-color: #404040;
+            border-top-color: #667eea;
+        }
+
+        /* Mobile Responsive Styles */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+                min-height: 100vh;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+
+            .header p {
+                font-size: 0.85rem;
+            }
+
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+
+            .input-section {
+                padding: 20px 15px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            #urlInput {
+                width: 100%;
+                padding: 14px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            #parseButton {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+
+            .content-section {
+                padding: 20px 15px;
+            }
+
+            .article-title {
+                font-size: 1.5rem;
+                margin-bottom: 12px;
+                line-height: 1.4;
+            }
+
+            .article-meta {
+                font-size: 0.85rem;
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+            }
+
+            .article-content {
+                font-size: 1rem;
+                line-height: 1.7;
+            }
+
+            .article-content h1,
+            .article-content h2,
+            .article-content h3 {
+                font-size: 1.3rem;
+                margin-top: 1.2em;
+                margin-bottom: 0.6em;
+            }
+
+            .article-content p {
+                margin-bottom: 1em;
+            }
+
+            .empty-state {
+                padding: 40px 15px;
+            }
+
+            .empty-state-icon {
+                font-size: 3rem;
+            }
+
+            .empty-state p {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .article-title {
+                font-size: 1.3rem;
+            }
+
+            .content-section {
+                padding: 15px 12px;
+            }
+
+            .input-section {
+                padding: 15px 12px;
+            }
+
+            .header {
+                padding: 15px 12px;
+            }
+
+            .theme-toggle {
+                top: 12px;
+                right: 12px;
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                <span id="themeIcon">🌙</span>
+            </button>
+            <h1>📖 Article Reader</h1>
+            <p>Extract clean, readable content from any web article</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="Enter article URL (e.g., https://example.com/article)"
+                    autocomplete="off"
+                >
+                <button id="parseButton">Parse</button>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Parsing article...</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📄</div>
+                <p>Enter a URL above and click Parse to extract article content</p>
+            </div>
+
+            <div class="article-container" id="articleContainer">
+                <h1 class="article-title" id="articleTitle"></h1>
+                <div class="article-meta" id="articleMeta"></div>
+                <div class="article-content" id="articleContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const body = document.body;
+
+        // Load saved theme preference or default to light mode
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            themeIcon.textContent = '☀️';
+        }
+
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                themeIcon.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Main app elements
+        const urlInput = document.getElementById('urlInput');
+        const parseButton = document.getElementById('parseButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const emptyState = document.getElementById('emptyState');
+        const articleContainer = document.getElementById('articleContainer');
+        const articleTitle = document.getElementById('articleTitle');
+        const articleMeta = document.getElementById('articleMeta');
+        const articleContent = document.getElementById('articleContent');
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function loadTwitterWidgets() {
+            // Check if there are any Twitter embeds in the content
+            const twitterEmbeds = document.querySelectorAll('.embed-twitter blockquote.twitter-tweet, blockquote.twitter-tweet');
+            console.log(`Found ${twitterEmbeds.length} Twitter embeds to load`);
+            
+            if (twitterEmbeds.length === 0) {
+                return; // No Twitter embeds to load
+            }
+
+            // Function to initialize widgets
+            function initWidgets() {
+                if (window.twttr && window.twttr.widgets) {
+                    console.log('Initializing Twitter widgets...');
+                    window.twttr.widgets.load();
+                } else {
+                    console.log('Twitter widgets not ready, retrying...');
+                    setTimeout(initWidgets, 200);
+                }
+            }
+
+            // Check if Twitter widget script is already loaded
+            if (!window.twttr) {
+                console.log('Loading Twitter widget script...');
+                const script = document.createElement('script');
+                script.src = 'https://platform.twitter.com/widgets.js';
+                script.charset = 'utf-8';
+                script.async = true;
+                
+                // Wait for script to load, then initialize widgets
+                script.onload = function() {
+                    console.log('Twitter widget script loaded');
+                    // Wait a bit for twttr to be fully initialized
+                    setTimeout(initWidgets, 300);
+                };
+                
+                script.onerror = function() {
+                    console.error('Failed to load Twitter widget script');
+                };
+                
+                document.head.appendChild(script);
+            } else {
+                // Already loaded, initialize immediately
+                initWidgets();
+            }
+        }
+
+        async function parseArticle() {
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            // Basic URL validation
+            try {
+                new URL(url);
+            } catch (e) {
+                showError('Please enter a valid URL (e.g., https://example.com/article)');
+                return;
+            }
+
+            // Show loading state
+            hideError();
+            loading.classList.add('show');
+            parseButton.disabled = true;
+            emptyState.style.display = 'none';
+            articleContainer.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to parse article');
+                }
+
+                // Display the article
+                articleTitle.textContent = data.title || 'Untitled Article';
+                
+                // Build meta information
+                const metaParts = [];
+                if (data.siteName) metaParts.push(data.siteName);
+                if (data.byline) metaParts.push(data.byline);
+                if (data.excerpt) metaParts.push(data.excerpt);
+                articleMeta.textContent = metaParts.join(' • ') || '';
+                articleMeta.style.display = metaParts.length > 0 ? 'block' : 'none';
+
+                // Set article content
+                articleContent.innerHTML = data.content || '<p>No content extracted.</p>';
+
+                // Show article container
+                articleContainer.classList.add('show');
+                emptyState.style.display = 'none';
+
+                // Load Twitter widgets after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    loadTwitterWidgets();
+                }, 100);
+
+            } catch (error) {
+                showError(error.message);
+                emptyState.style.display = 'block';
+            } finally {
+                loading.classList.remove('show');
+                parseButton.disabled = false;
+            }
+        }
+
+        // Event listeners
+        parseButton.addEventListener('click', parseArticle);
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                parseArticle();
+            }
+        });
+    </script>
+</body>
+</html>
