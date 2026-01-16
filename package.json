@@ -7,13 +7,20 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": ["article", "reader", "scraper"],
+  "keywords": [
+    "article",
+    "reader",
+    "scraper"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "@mozilla/readability": "^0.4.4",
+    "express": "^4.18.2",
     "jsdom": "^22.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^24.35.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

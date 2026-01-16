@@ -585,9 +585,9 @@
 
         <div class="input-section">
             <div class="input-group">
-                <input 
-                    type="text" 
-                    id="urlInput" 
+                <input
+                    type="text"
+                    id="urlInput"
                     placeholder="Enter article URL (e.g., https://example.com/article)"
                     autocomplete="off"
                 >
@@ -632,7 +632,7 @@
         // Toggle theme
         themeToggle.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
-            
+
             if (body.classList.contains('dark-mode')) {
                 moonIcon.style.display = 'none';
                 sunIcon.style.display = 'block';
@@ -671,7 +671,7 @@
             // Check if there are any Twitter embeds in the content
             const twitterEmbeds = document.querySelectorAll('.embed-twitter blockquote.twitter-tweet, blockquote.twitter-tweet');
             console.log(`Found ${twitterEmbeds.length} Twitter embeds to load`);
-            
+
             if (twitterEmbeds.length === 0) {
                 return; // No Twitter embeds to load
             }
@@ -694,18 +694,18 @@
                 script.src = 'https://platform.twitter.com/widgets.js';
                 script.charset = 'utf-8';
                 script.async = true;
-                
+
                 // Wait for script to load, then initialize widgets
                 script.onload = function() {
                     console.log('Twitter widget script loaded');
                     // Wait a bit for twttr to be fully initialized
                     setTimeout(initWidgets, 300);
                 };
-                
+
                 script.onerror = function() {
                     console.error('Failed to load Twitter widget script');
                 };
-                
+
                 document.head.appendChild(script);
             } else {
                 // Already loaded, initialize immediately
@@ -753,7 +753,7 @@
 
                 // Display the article
                 articleTitle.textContent = data.title || 'Untitled Article';
-                
+
                 // Build meta information
                 const metaParts = [];
                 if (data.siteName) metaParts.push(data.siteName);
@@ -775,8 +775,38 @@
                 }, 100);
 
             } catch (error) {
-                showError(error.message);
-                emptyState.style.display = 'block';
+                // Check if it's a Cloudflare or blocking error
+                const isBlockingError = error.message.includes('Cloudflare') ||
+                                       error.message.includes('Forbidden') ||
+                                       error.message.includes('403') ||
+                                       error.message.includes('browser automation');
+
+                if (isBlockingError) {
+                    // Offer to open in new window as fallback
+                    const openInNewWindow = confirm(
+                        'Unable to parse this article automatically due to security restrictions.\n\n' +
+                        'Would you like to open it in a new window instead?'
+                    );
+
+                    if (openInNewWindow) {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                        emptyState.style.display = 'block';
+                        emptyState.innerHTML = `
+                            <div class="empty-state-icon">🔗</div>
+                            <p>Article opened in new window</p>
+                            <p style="font-size: 0.9rem; color: #999; margin-top: 10px;">
+                                Some sites use security measures that prevent automated access.<br>
+                                You can read the article in the new window that just opened.
+                            </p>
+                        `;
+                    } else {
+                        showError(error.message);
+                        emptyState.style.display = 'block';
+                    }
+                } else {
+                    showError(error.message);
+                    emptyState.style.display = 'block';
+                }
             } finally {
                 loading.classList.remove('show');
                 parseButton.disabled = false;
